@@ -3,11 +3,11 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<DebugType>embedded</DebugType>
-		<VersionPrefix>1.0.3</VersionPrefix>
+		<VersionPrefix>1.0.0</VersionPrefix>
 		<VersionSuffix>dev</VersionSuffix>
 		<RootNamespace>BetterCrewLink</RootNamespace>
 		<Description>BCL as a DLL</Description>
-		<Authors>Goober</Authors>
+		<Authors>NAUM</Authors>
 	</PropertyGroup>
 	
 	<PropertyGroup>
@@ -21,7 +21,5 @@
 
 	<Import Project="../AmongUs.props" />
 
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Exec Command="copy /Y &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Among Us - TOU Mira - Vanilla\BepInEx\plugins\&quot;" ContinueOnError="true" />
-	</Target>
+
 </Project>
