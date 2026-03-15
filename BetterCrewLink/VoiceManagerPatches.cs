@@ -18,7 +18,7 @@ public static class VoiceManagerPatches
             return;
         }
 
-        VoiceManager.SetActiveCamera(__instance.currentCamera);
+        TrySetCamera(__instance);
     }
 
     // Camera detection for Polus
@@ -32,8 +32,7 @@ public static class VoiceManagerPatches
             return;
         }
 
-        // Fix: field is "currentCamera", not "currentCam"
-        VoiceManager.SetActiveCamera(__instance.currentCamera);
+        TrySetCamera(__instance);
     }
 
     // Clear camera when any surveillance minigame closes
@@ -43,6 +42,34 @@ public static class VoiceManagerPatches
     {
         // Fix: removed non-existent SurvCameraMinigame check
         if (__instance is SurveillanceMinigame || __instance is PlanetSurveillanceMinigame)
+        {
+            VoiceManager.ClearActiveCamera();
+        }
+    }
+
+    private static void TrySetCamera(object instance)
+    {
+        var type = instance.GetType();
+        var field = AccessTools.Field(type, "currentCamera")
+            ?? AccessTools.Field(type, "currentCam")
+            ?? AccessTools.Field(type, "camNumber");
+
+        if (field == null)
+        {
+            VoiceManager.ClearActiveCamera();
+            return;
+        }
+
+        var value = field.GetValue(instance);
+        if (value is int camInt)
+        {
+            VoiceManager.SetActiveCamera(camInt);
+        }
+        else if (value is byte camByte)
+        {
+            VoiceManager.SetActiveCamera(camByte);
+        }
+        else
         {
             VoiceManager.ClearActiveCamera();
         }
