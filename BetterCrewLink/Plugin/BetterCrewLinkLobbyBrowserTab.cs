@@ -1,6 +1,7 @@
 using BepInEx.Configuration;
 using BetterCrewLink.Networking;
 using HarmonyLib;
+using InnerNet;
 using MiraAPI.LocalSettings;
 using MiraAPI.Utilities;
 using MiraAPI.Patches.LocalSettings;
