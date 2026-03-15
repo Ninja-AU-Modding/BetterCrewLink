@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<DebugType>embedded</DebugType>
+		<VersionPrefix>1.0.3</VersionPrefix>
+		<VersionSuffix>dev</VersionSuffix>
+		<RootNamespace>BetterCrewLink</RootNamespace>
+		<Description>BCL as a DLL</Description>
+		<Authors>Goober</Authors>
+	</PropertyGroup>
+	
+	<PropertyGroup>
+		<NoWarn>CS1591;CA1707</NoWarn>
+	</PropertyGroup>
+	
+	<ItemGroup>
+	  <PackageReference Include="Concentus" Version="2.2.2" />
+	  <PackageReference Include="SocketIOClient" Version="4.0.1" />
+	</ItemGroup>
+
+	<Import Project="../AmongUs.props" />
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="copy /Y &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Among Us - TOU Mira - Vanilla\BepInEx\plugins\&quot;" ContinueOnError="true" />
+	</Target>
+</Project>
