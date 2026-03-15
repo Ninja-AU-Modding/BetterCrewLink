@@ -283,11 +283,13 @@ public sealed class VoiceClient
         Disconnect();
 
         _currentServer = serverUrl;
-        _socket = new SocketIO(new Uri(serverUrl), new SocketIOOptions
+        var options = new SocketIOOptions
         {
             Reconnection = true,
             ReconnectionAttempts = int.MaxValue
-        });
+        };
+        ForceEngineIoV3(options);
+        _socket = new SocketIO(new Uri(serverUrl), options);
 
         _socket.OnConnected += async (_, _) =>
         {
@@ -376,6 +378,19 @@ public sealed class VoiceClient
         });
 
         _socket.ConnectAsync();
+    }
+
+    private static void ForceEngineIoV3(SocketIOOptions options)
+    {
+        var prop = options.GetType().GetProperty("EIO");
+        if (prop == null || !prop.CanWrite)
+            return;
+
+        var value = 3;
+        if (prop.PropertyType.IsEnum)
+            prop.SetValue(options, Enum.ToObject(prop.PropertyType, value));
+        else
+            prop.SetValue(options, Convert.ChangeType(value, prop.PropertyType));
     }
 
     public async Task JoinLobby(string lobbyCode, int playerId, int clientId, bool isHost)

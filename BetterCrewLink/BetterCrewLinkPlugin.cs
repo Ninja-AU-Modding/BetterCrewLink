@@ -28,6 +28,7 @@ public partial class BetterCrewLinkPlugin : BasePlugin, IMiraPlugin
     {
         BCLLogger.Debug("BetterCrewLink is loading...");
         BCLLogger.Debug($"BCL Version: {VersionString + (IsDevRelease ? "-indev" : "")}");
+        Utils.DependencyLoader.EnsureLoaded();
 
         ReactorCredits.Register(
             "BetterCrewLink",
