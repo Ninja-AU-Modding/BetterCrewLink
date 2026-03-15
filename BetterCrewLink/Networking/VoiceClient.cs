@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 
 namespace BetterCrewLink.Networking;
 
-// Handles voice relay networking, mic capture, and remote playback.
+// Handles voice relay networking, mic capture, and remote playback. UPDATED
 public sealed class VoiceClient
 {
     public static float LastLocalMicRms { get; private set; }
