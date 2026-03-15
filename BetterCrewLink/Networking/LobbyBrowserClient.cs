@@ -84,7 +84,7 @@ public sealed class LobbyBrowserClient
             Reconnection = true,
             ReconnectionAttempts = int.MaxValue
         };
-        ForceEngineIoV3(options);
+        options.EIO = SocketIOClient.Common.EngineIO.V3;
         _socket = new SocketIO(new Uri(serverUrl), options);
 
         _socket.OnConnected += async (_, _) =>
@@ -158,18 +158,6 @@ public sealed class LobbyBrowserClient
         _socket.ConnectAsync();
     }
 
-    private static void ForceEngineIoV3(SocketIOOptions options)
-    {
-        var prop = options.GetType().GetProperty("EIO");
-        if (prop == null || !prop.CanWrite)
-            return;
-
-        var value = 3;
-        if (prop.PropertyType.IsEnum)
-            prop.SetValue(options, Enum.ToObject(prop.PropertyType, value));
-        else
-            prop.SetValue(options, Convert.ChangeType(value, prop.PropertyType));
-    }
 
     private void Disconnect()
     {

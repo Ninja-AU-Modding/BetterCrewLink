@@ -35,18 +35,6 @@ public static class VoiceManagerPatches
         TrySetCamera(__instance);
     }
 
-    // Clear camera when any surveillance minigame closes
-    [HarmonyPatch(typeof(Minigame), nameof(Minigame.Close))]
-    [HarmonyPostfix]
-    public static void Minigame_Close(Minigame __instance)
-    {
-        // Fix: removed non-existent SurvCameraMinigame check
-        if (__instance is SurveillanceMinigame || __instance is PlanetSurveillanceMinigame)
-        {
-            VoiceManager.ClearActiveCamera();
-        }
-    }
-
     private static void TrySetCamera(object instance)
     {
         var type = instance.GetType();
