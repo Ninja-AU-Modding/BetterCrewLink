@@ -19,7 +19,7 @@ namespace BetterCrewLink;
 [RegisterInIl2Cpp]
 public sealed class VoiceManager(IntPtr cppPtr) : MonoBehaviour(cppPtr)
 {
-    // Singleton
+
     public static VoiceManager? Instance { get; private set; }
 
     // Configuration
