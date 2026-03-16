@@ -3,8 +3,23 @@
         <PackageReference Include="Reactor" Version="2.5.0-ci.371"/>
         <Reference Include="MiraAPI">
             <HintPath>..\libs\MiraAPI.dll</HintPath>
-            <Private>false</Private>
+			<Private>False</Private>
         </Reference>
+		<Reference Include="SocketIOClient">
+			<HintPath>..\libs\SocketIOClient.dll</HintPath>
+		</Reference>
+		<Reference Include="SocketIOClient.Common">
+			<HintPath>..\libs\SocketIOClient.Common.dll</HintPath>
+		</Reference>
+		<Reference Include="Concentus">
+			<HintPath>..\libs\Concentus.dll</HintPath>
+		</Reference>
+		<Reference Include="SIPSorcery">
+			<HintPath>..\libs\SIPSorcery.dll</HintPath>
+		</Reference>
+		<Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
+			<HintPath>..\libs\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+		</Reference>
         <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.735" Private="false" ExcludeAssets="runtime;native"/>
         <PackageReference Include="AmongUs.GameLibs.Steam" Version="2025.9.9" PrivateAssets="all"/>
 
