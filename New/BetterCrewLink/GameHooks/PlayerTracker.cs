@@ -1,4 +1,5 @@
-﻿using BetterCrewLink.Utils;
+using BetterCrewLink.Data;
+using BetterCrewLink.Networking;
 using InnerNet;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,27 +34,29 @@ public sealed record GameSnapshot(
     int PlayerId,
     bool IsHost,
     PlayerSnapshot LocalPlayer,
-    IReadOnlyList<PlayerSnapshot> Players
+    IReadOnlyList<PlayerSnapshot> Players,
+    bool CommsSabActive,
+    MapType Map,
+    int ActiveCameraIndex
 );
 
-// Reads in-game player state directly from Among Us objects.
 public sealed class PlayerTracker
 {
     public GameSnapshot? Update()
     {
         var client = AmongUsClient.Instance;
-        var local = PlayerControl.LocalPlayer;
+        var local  = PlayerControl.LocalPlayer;
 
         if (client == null || local == null)
             return null;
 
         var phase = client.GameState switch
         {
-            InnerNet.InnerNetClient.GameStates.NotJoined => GamePhase.Menu,
-            InnerNet.InnerNetClient.GameStates.Joined => GamePhase.Lobby,
-            InnerNet.InnerNetClient.GameStates.Started => MeetingHud.Instance ? GamePhase.Discussion : GamePhase.Tasks,
-            InnerNet.InnerNetClient.GameStates.Ended => GamePhase.Lobby,
-            _ => GamePhase.Menu,
+            InnerNetClient.GameStates.NotJoined => GamePhase.Menu,
+            InnerNetClient.GameStates.Joined    => GamePhase.Lobby,
+            InnerNetClient.GameStates.Started   => MeetingHud.Instance ? GamePhase.Discussion : GamePhase.Tasks,
+            InnerNetClient.GameStates.Ended     => GamePhase.Lobby,
+            _                                   => GamePhase.Menu,
         };
 
         var players = PlayerControl.AllPlayerControls
@@ -65,32 +68,38 @@ public sealed class PlayerTracker
         if (localSnapshot == null)
             return null;
 
+        var gameOptions = GameOptionsManager.Instance?.CurrentGameOptions;
+        var map = gameOptions != null ? (MapType)gameOptions.MapId : MapType.TheSkeld;
+
         return new GameSnapshot(
-            phase,
-            GameCode.IntToGameName(client.GameId),
-            client.GameId,
-            client.ClientId,
-            localSnapshot.PlayerId,
-            client.AmHost,
-            localSnapshot,
-            players
+            Phase:            phase,
+            LobbyCode:        GameCode.IntToGameName(client.GameId),
+            LobbyCodeInt:     client.GameId,
+            ClientId:         client.ClientId,
+            PlayerId:         localSnapshot.PlayerId,
+            IsHost:           client.AmHost,
+            LocalPlayer:      localSnapshot,
+            Players:          players,
+            CommsSabActive:   Utilities.IsCommsSabotaged(),
+            Map:              map,
+            ActiveCameraIndex: VoiceClient.ActiveCameraIndex
         );
     }
 
     private static PlayerSnapshot BuildSnapshot(PlayerControl player, int localClientId)
     {
         var data = player.Data;
-        var pos = player.GetTruePosition();
+        var pos  = player.GetTruePosition();
 
         return new PlayerSnapshot(
-            data.PlayerId,
-            data.ClientId,
-            data.PlayerName,
-            data.ClientId == localClientId,
-            data.IsDead,
-            player.IsImpostor(),
-            player.inVent,
-            new Vector2(pos.x, pos.y)
+            PlayerId:  data.PlayerId,
+            ClientId:  data.ClientId,
+            Name:      data.PlayerName,
+            IsLocal:   data.ClientId == localClientId,
+            IsDead:    data.IsDead,
+            IsImpostor: player.IsImpostor(),
+            InVent:    player.inVent,
+            Position:  new Vector2(pos.x, pos.y)
         );
     }
 }

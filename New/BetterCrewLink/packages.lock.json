@@ -56,6 +56,19 @@
           "BepInEx.Unity.IL2CPP": "6.0.0-be.735"
         }
       },
+      "SIPSorcery": {
+        "type": "Direct",
+        "requested": "[10.0.4-pre, )",
+        "resolved": "10.0.4-pre",
+        "contentHash": "tmaOwi45uSQ/YRNMivF+L6viX1fyHPmXG2/vYB4Jnloh/C/g8qUNC7AQ8xZPXoVfKmwPBjFPfAFIOKyyixLeyQ==",
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.6.2",
+          "Concentus": "2.2.2",
+          "DnsClient": "1.8.0",
+          "SIPSorcery.WebSocketSharp": "0.0.1",
+          "SIPSorceryMedia.Abstractions": "8.0.12"
+        }
+      },
       "SocketIOClient": {
         "type": "Direct",
         "requested": "[4.0.1, )",
@@ -142,10 +155,20 @@
           "MonoMod.Utils": "22.7.31.1"
         }
       },
+      "BouncyCastle.Cryptography": {
+        "type": "Transitive",
+        "resolved": "2.6.2",
+        "contentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w=="
+      },
       "Disarm": {
         "type": "Transitive",
         "resolved": "2022.1.0-master.57",
         "contentHash": "/dkg7hg8iPBQN4bTV1lMQacarH6fMpgUXhJuo6iI7Wv7YpH7g5F9hJfje7dSMhqG0YlDacLuyWvcph5GzKUXog=="
+      },
+      "DnsClient": {
+        "type": "Transitive",
+        "resolved": "1.8.0",
+        "contentHash": "RRwtaCXkXWsx0mmsReGDqCbRLtItfUbkRJlet1FpdciVhyMGKcPd57T1+8Jki9ojHlq9fntVhXQroOOgRak8DQ=="
       },
       "HarmonyX": {
         "type": "Transitive",
@@ -431,6 +454,19 @@
         "type": "Transitive",
         "resolved": "2.0.2",
         "contentHash": "4EQgYdNZ92SyaO7YFk6olVnebF5V+jrHyMUjvPq89tLeMo8NSfgDF+6Zwq/lgh9j/0yfQp9Lkm0ZA0rUATCZFA=="
+      },
+      "SIPSorcery.WebSocketSharp": {
+        "type": "Transitive",
+        "resolved": "0.0.1",
+        "contentHash": "lBlR9rZmMty2v5kPzCseAyuSv95FSoGuYZJgDy6M/qqZ/xq1ejFnOVEpXMDqBIthiTUOH8rvMcpnva7HXK0ZVw=="
+      },
+      "SIPSorceryMedia.Abstractions": {
+        "type": "Transitive",
+        "resolved": "8.0.12",
+        "contentHash": "70bYl3RFc0lkL6Z2M2GD/vymnWvmnvTSJfEpFHE4Uh+bp5Rz9DWsEvuF8EZEhaW3foPGvpNIfP5nGj52cCXjgw==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.0"
+        }
       },
       "SocketIOClient.Common": {
         "type": "Transitive",
