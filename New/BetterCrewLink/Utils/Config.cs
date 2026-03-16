@@ -1,5 +1,5 @@
-﻿using MiraAPI.LocalSettings;
-using UnityEngine;
+using BetterCrewLink.Networking;
+using MiraAPI.LocalSettings;
 
 namespace BetterCrewLink.Utils;
 
@@ -19,10 +19,21 @@ public readonly record struct RuntimeSettings(
     bool TestRelay,
     string ServerUrl,
     bool EnableOverlay,
-    OverlayPositionOption OverlayPosition
+    OverlayPositionOption OverlayPosition,
+    // Room rules
+    bool WallsBlockSound,
+    bool OnlyHearInSight,
+    bool HearInVent,
+    bool VentPrivateChat,
+    bool CommsSabDisables,
+    bool CameraCanHear,
+    bool ImpostorPrivateRadio,
+    bool OnlyGhostsCanTalk,
+    bool OnlyMeetingOrLobby,
+    // Runtime keybind state
+    bool ImpostorRadioOnly
 );
 
-// Centralized access to MiraAPI local settings.
 public static class BclConfig
 {
     public const string DefaultServerUrl = "https://bettercrewl.ink";
@@ -32,38 +43,47 @@ public static class BclConfig
     {
         get
         {
-            var settings = LocalSettingsTabSingleton<BetterCrewLinkLocalSettings>.Instance;
+            var s = LocalSettingsTabSingleton<BetterCrewLinkLocalSettings>.Instance;
 
-            var serverUrl = string.IsNullOrWhiteSpace(settings.ServerUrl.Value)
+            var serverUrl = string.IsNullOrWhiteSpace(s.ServerUrl.Value)
                 ? DefaultServerUrl
-                : settings.ServerUrl.Value;
+                : s.ServerUrl.Value;
             if (!serverUrl.EndsWith("/"))
                 serverUrl += "/";
 
-            var activation = settings.ActivationType.Value;
-            var micDevice = settings.MicrophoneDevice.Value;
+            var activation = s.ActivationType.Value;
+            var micDevice = s.MicrophoneDevice.Value;
             if (string.IsNullOrWhiteSpace(micDevice) || micDevice == DefaultDevice)
                 micDevice = DefaultDevice;
 
             return new RuntimeSettings(
-                micDevice,
-                DefaultDevice,
-                activation == VoiceActivationType.VoiceActivity,
-                activation == VoiceActivationType.PushToTalk,
-                activation == VoiceActivationType.PushToMute,
-                settings.MicrophoneVolume.Value,
-                settings.MicSensitivity.Value,
-                settings.MasterVolume.Value,
-                settings.CrewVolumeAsGhost.Value,
-                settings.GhostVolumeAsImpostor.Value,
-                settings.MaxDistance.Value,
-                settings.EnableSpatialAudio.Value,
-                settings.TestRelay.Value,
-                serverUrl,
-                settings.EnableOverlay.Value,
-                settings.OverlayPosition.Value
+                MicrophoneDevice:    micDevice,
+                SpeakerDevice:       DefaultDevice,
+                VoiceActivityEnabled: activation == VoiceActivationType.VoiceActivity,
+                PushToTalkEnabled:   activation == VoiceActivationType.PushToTalk,
+                PushToMuteEnabled:   activation == VoiceActivationType.PushToMute,
+                MicrophoneVolume:    s.MicrophoneVolume.Value,
+                MicSensitivity:      s.MicSensitivity.Value,
+                MasterVolume:        s.MasterVolume.Value,
+                CrewVolumeAsGhost:   s.CrewVolumeAsGhost.Value,
+                GhostVolumeAsImpostor: s.GhostVolumeAsImpostor.Value,
+                MaxDistance:         s.MaxDistance.Value,
+                EnableSpatialAudio:  s.EnableSpatialAudio.Value,
+                TestRelay:           s.TestRelay.Value,
+                ServerUrl:           serverUrl,
+                EnableOverlay:       s.EnableOverlay.Value,
+                OverlayPosition:     s.OverlayPosition.Value,
+                WallsBlockSound:     s.WallsBlockSound.Value,
+                OnlyHearInSight:     s.OnlyHearInSight.Value,
+                HearInVent:          s.HearInVent.Value,
+                VentPrivateChat:     s.VentPrivateChat.Value,
+                CommsSabDisables:    s.CommsSabDisables.Value,
+                CameraCanHear:       s.CameraCanHear.Value,
+                ImpostorPrivateRadio: s.ImpostorPrivateRadio.Value,
+                OnlyGhostsCanTalk:   s.OnlyGhostsCanTalk.Value,
+                OnlyMeetingOrLobby:  s.OnlyMeetingOrLobby.Value,
+                ImpostorRadioOnly:   VoiceClient.ImpostorRadioOnly
             );
         }
     }
-
 }
