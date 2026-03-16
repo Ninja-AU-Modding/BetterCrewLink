@@ -1,4 +1,4 @@
-﻿using BetterCrewLink.GameHooks;
+using BetterCrewLink.GameHooks;
 using BetterCrewLink.Networking;
 using BetterCrewLink.Utils;
 using BetterCrewLink.Voice;
@@ -13,7 +13,6 @@ public partial class BetterCrewLinkPlugin
 {
     internal static BetterCrewLinkBehaviour? Behaviour { get; private set; }
 
-    // Called from the BepInEx entry point to bootstrap runtime components.
     private void InitializeRuntime()
     {
         var go = new GameObject("BetterCrewLink");
@@ -27,18 +26,18 @@ public partial class BetterCrewLinkPlugin
 [RegisterInIl2Cpp]
 public sealed class BetterCrewLinkBehaviour : MonoBehaviour
 {
-    private PlayerTracker _tracker = null!;
+    private PlayerTracker    _tracker   = null!;
     private ProximityManager _proximity = null!;
-    private VoiceClient _voice = null!;
-    private GameSnapshot? _lastSnapshot;
+    private VoiceClient      _voice     = null!;
+    private GameSnapshot?    _lastSnapshot;
 
     public BetterCrewLinkBehaviour(IntPtr ptr) : base(ptr) { }
 
     public void Initialize()
     {
-        _tracker = new PlayerTracker();
+        _tracker   = new PlayerTracker();
         _proximity = new ProximityManager();
-        _voice = new VoiceClient();
+        _voice     = new VoiceClient();
         _voice.Initialize();
     }
 
@@ -47,7 +46,7 @@ public sealed class BetterCrewLinkBehaviour : MonoBehaviour
         var settings = BclConfig.Current;
         LobbyBrowserClient.Instance.Tick(settings);
 
-        var snapshot = _tracker.Update();
+        var snapshot  = _tracker.Update();
         _lastSnapshot = snapshot;
 
         if (snapshot == null)
@@ -63,16 +62,15 @@ public sealed class BetterCrewLinkBehaviour : MonoBehaviour
 
         _voice.ApplyVolumes(volumes, snapshot, settings);
         _voice.Tick(snapshot, settings);
-        LobbyBrowserClient.Instance.Tick(settings);
 
         UpdateMicOverlay(snapshot);
     }
 
     private void UpdateMicOverlay(GameSnapshot snapshot)
     {
-        var overlay = MicOverlay.Ensure();
+        var overlay  = MicOverlay.Ensure();
         var settings = BclConfig.Current;
-        var show = settings.EnableOverlay && snapshot.Phase == GamePhase.Lobby;
+        var show     = settings.EnableOverlay && snapshot.Phase == GamePhase.Lobby;
         overlay.SetVisible(show);
 
         if (!show)
@@ -89,5 +87,8 @@ public sealed class BetterCrewLinkBehaviour : MonoBehaviour
 
         if (BetterCrewLinkKeybinds.IsPressed(BetterCrewLinkKeybinds.ToggleDeafen))
             _voice.ToggleDeafen();
+
+        if (BetterCrewLinkKeybinds.IsPressed(BetterCrewLinkKeybinds.ImpostorRadio))
+            _voice.ToggleImpostorRadio();
     }
 }
