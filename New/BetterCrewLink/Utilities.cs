@@ -1,9 +1,4 @@
-﻿using MiraAPI.Roles;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace BetterCrewLink
 {
@@ -11,14 +6,14 @@ namespace BetterCrewLink
     {
         public static bool IsImpostor(this PlayerControl player)
         {
-            return player?.Data && player?.Data?.Role && player?.Data?.Role.IsImpostor() == true;
+            return player?.Data?.Role != null && IsImpostor(player.Data.Role);
         }
+
         public static bool IsImpostor(this RoleBehaviour role)
         {
-            return role is ICustomRole customRole
-                ? customRole.Team is ModdedRoleTeams.Impostor
-                : role.TeamType is RoleTeamTypes.Impostor;
+            return role.TeamType == RoleTeamTypes.Impostor;
         }
+
         public static bool IsCommsSabotaged()
         {
             if (!ShipStatus.Instance) return false;
