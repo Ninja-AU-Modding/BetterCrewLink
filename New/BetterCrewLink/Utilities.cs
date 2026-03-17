@@ -17,6 +17,7 @@ namespace BetterCrewLink
         public static bool IsCommsSabotaged()
         {
             if (!ShipStatus.Instance) return false;
+            if (!ShipStatus.Instance.Systems.ContainsKey(SystemTypes.Comms)) return false;
             var comms = ShipStatus.Instance.Systems[SystemTypes.Comms].Cast<HudOverrideSystemType>();
             return comms != null && comms.IsActive;
         }

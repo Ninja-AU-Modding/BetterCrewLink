@@ -48,7 +48,7 @@ public static class BclConfig
             var serverUrl = string.IsNullOrWhiteSpace(s.ServerUrl.Value)
                 ? DefaultServerUrl
                 : s.ServerUrl.Value;
-            if (!serverUrl.EndsWith("/"))
+            if (!serverUrl.EndsWith('/'))
                 serverUrl += "/";
 
             var activation = s.ActivationType.Value;

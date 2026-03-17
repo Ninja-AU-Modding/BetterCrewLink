@@ -61,6 +61,7 @@ public sealed class PlayerTracker
 
         var players = PlayerControl.AllPlayerControls
             .ToArray()
+            .Where(p => p != null && p.Data != null)
             .Select(p => BuildSnapshot(p, client.ClientId))
             .ToList();
 

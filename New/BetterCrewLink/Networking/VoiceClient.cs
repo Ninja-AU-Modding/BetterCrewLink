@@ -5,6 +5,7 @@ using BetterCrewLink.Utils;
 using BetterCrewLink.Voice;
 using Concentus.Enums;
 using Concentus.Structs;
+using Il2CppInterop.Runtime.Attributes;
 using Reactor.Utilities.Attributes;
 using SIPSorcery.Net;
 using SocketIOClient;
@@ -29,6 +30,8 @@ public sealed class VoiceClient
     public static void SetActiveCamera(int index) => _activeCameraIndex = index;
     public static void ClearActiveCamera() => _activeCameraIndex = -1;
 
+    private int _localClientId = -1;
+
     public static bool ImpostorRadioOnly { get; private set; }
     public void ToggleImpostorRadio() => ImpostorRadioOnly = !ImpostorRadioOnly;
 
@@ -42,7 +45,6 @@ public sealed class VoiceClient
     private SocketIO? _socket;
     private string _currentServer = string.Empty;
     private string _currentLobby = "MENU";
-    private string _mySocketId = string.Empty;
 
     // ICE servers (populated by clientPeerConfig)
     private List<RTCIceServer> _iceServers = new()
@@ -205,10 +207,11 @@ public sealed class VoiceClient
             var client = ctx.GetValue<Client>(1);
             _mainThreadActions.Enqueue(() =>
             {
+                if (string.IsNullOrEmpty(socketId) || client == null) return;
+                if (_localClientId >= 0 && client.ClientId == _localClientId) return; // skip self
                 _clientToSocket[client.ClientId] = socketId;
                 _socketToClient[socketId] = client.ClientId;
-                // If this is our own entry, store our socket ID.
-                // (BCL server sends setClient for all peers including self)
+                EnsurePeerAudio(socketId);
             });
             await Task.CompletedTask;
         });
@@ -216,21 +219,25 @@ public sealed class VoiceClient
         _socket.On("setClients", async ctx =>
         {
             var clients = ctx.GetValue<Dictionary<string, Client>>(0);
-            _mainThreadActions.Enqueue(() =>
+            if (clients is not null)
             {
-                // Remove stale
-                foreach (var sid in _clientToSocket.Values.ToList())
-                    if (!clients.ContainsKey(sid))
-                        RemovePeer(sid);
-
-                foreach (var kv in clients)
+                _mainThreadActions.Enqueue(() =>
                 {
-                    _clientToSocket[kv.Value.ClientId] = kv.Key;
-                    _socketToClient[kv.Key] = kv.Value.ClientId;
-                    // Non-initiator for existing peers. They will send us an offer.
-                    EnsurePeerAudio(kv.Key);
-                }
-            });
+                    // Remove stale
+                    foreach (var sid in _clientToSocket.Values.ToList())
+                        if (!clients.ContainsKey(sid))
+                            RemovePeer(sid);
+
+                    foreach (var kv in clients)
+                    {
+                        if (string.IsNullOrEmpty(kv.Key) || kv.Value == null) continue;
+                        if (_localClientId >= 0 && kv.Value.ClientId == _localClientId) continue;
+                        _clientToSocket[kv.Value.ClientId] = kv.Key;
+                        _socketToClient[kv.Key] = kv.Value.ClientId;
+                        EnsurePeerAudio(kv.Key);
+                    }
+                });
+            }
             await Task.CompletedTask;
         });
 
@@ -241,6 +248,8 @@ public sealed class VoiceClient
             var client = ctx.GetValue<Client>(1);
             _mainThreadActions.Enqueue(() =>
             {
+                if (string.IsNullOrEmpty(socketId) || client == null) return;
+                if (_localClientId >= 0 && client.ClientId == _localClientId) return;
                 _clientToSocket[client.ClientId] = socketId;
                 _socketToClient[socketId] = client.ClientId;
                 EnsurePeerAudio(socketId);
@@ -252,7 +261,8 @@ public sealed class VoiceClient
         _socket.On("leave", async ctx =>
         {
             var socketId = ctx.GetValue<string>(0);
-            _mainThreadActions.Enqueue(() => RemovePeer(socketId));
+            if (!string.IsNullOrEmpty(socketId))
+                _mainThreadActions.Enqueue(() => RemovePeer(socketId));
             await Task.CompletedTask;
         });
 
@@ -293,7 +303,7 @@ public sealed class VoiceClient
         _socket?.DisconnectAsync();
         _socket = null;
         _currentLobby = "MENU";
-        _mySocketId = string.Empty;
+        _localClientId = -1;
         ClearPeers();
         StopMicrophone();
     }
@@ -301,8 +311,8 @@ public sealed class VoiceClient
     public async Task JoinLobby(string lobbyCode, int playerId, int clientId, bool isHost)
     {
         if (_socket == null) return;
-
         _currentLobby = lobbyCode;
+        _localClientId = clientId;
 
         if (lobbyCode == "MENU")
         {
@@ -346,11 +356,15 @@ public sealed class VoiceClient
 
         var rtcConfig = new RTCConfiguration { iceServers = _iceServers };
         var pc = new RTCPeerConnection(rtcConfig);
-
         var peer = new WebRtcPeer(pc, audio);
-        _peers[socketId] = peer;
 
-        // Incoming data channel
+        if (!_peers.TryAdd(socketId, peer))
+        {
+            peer.Dispose();
+            return;
+        }
+
+        // Incoming data channel (non-initiator path)
         pc.ondatachannel += dc =>
         {
             peer.DataChannel = dc;
@@ -369,7 +383,7 @@ public sealed class VoiceClient
             });
             _socket?.EmitAsync("signal", new object[]
             {
-                new { to = socketId, data = signalData }
+            new { to = socketId, data = signalData }
             });
         };
     }
@@ -451,13 +465,16 @@ public sealed class VoiceClient
         var decoded = peer.Audio.Decoder.Decode(opusData, 0, opusData.Length, pcm, 0, pcm.Length);
         if (decoded <= 0) return;
 
-        // Track RMS for speaking indicators
         if (_socketToClient.TryGetValue(socketId, out var clientId))
         {
             var rmsSum = 0f;
             for (var i = 0; i < decoded; i++) { var s = pcm[i] / (float)short.MaxValue; rmsSum += s * s; }
-            _peerTalkingLevels[clientId] = Mathf.Sqrt(rmsSum / decoded);
-            _peerTalkingTimestamps[clientId] = Time.time;
+            var rms = (float)Math.Sqrt(rmsSum / decoded); // Math.Sqrt is thread-safe; Mathf is not
+            _mainThreadActions.Enqueue(() =>
+            {
+                _peerTalkingLevels[clientId] = rms;
+                _peerTalkingTimestamps[clientId] = Time.time;
+            });
         }
 
         for (var i = 0; i < decoded; i++)
@@ -532,7 +549,7 @@ public sealed class VoiceClient
     private void StopMicrophone()
     {
         if (_micClip == null) return;
-        Microphone.End(null);
+        Microphone.End(string.IsNullOrEmpty(_activeMicDevice) ? null : _activeMicDevice);
         Object.Destroy(_micClip);
         _micClip = null;
         _activeMicDevice = string.Empty;
@@ -543,7 +560,7 @@ public sealed class VoiceClient
         StartMicrophone(settings);
         if (_micClip == null || _encoder == null) return;
 
-        var currentPos = Microphone.GetPosition(null);
+        var currentPos = Microphone.GetPosition(string.IsNullOrEmpty(_activeMicDevice) ? null : _activeMicDevice);
         if (currentPos < _lastMicPos) currentPos += _micClip.samples;
         if (currentPos - _lastMicPos < FrameSamples) return;
 
@@ -588,7 +605,10 @@ public sealed class VoiceClient
                 if (peer.DataChannel?.readyState == RTCDataChannelState.open)
                     peer.DataChannel.send(trimmed);
             }
-            catch { /* Ignore if channel closed mid-send */ }
+            catch (Exception ex)
+            {
+                BCLLogger.Debug($"BCL: DataChannel send failed for peer, channel likely closed: {ex.Message}");
+            }
         }
     }
 
@@ -681,7 +701,6 @@ public sealed class VoiceClient
     {
         public string from { get; set; } = string.Empty;
         public string data { get; set; } = string.Empty;
-        public Client? client { get; set; }
     }
 
     private sealed class ClientPeerConfig
@@ -691,16 +710,17 @@ public sealed class VoiceClient
 
     private sealed class IceServerDto
     {
-        public string urls { get; set; } = string.Empty;
-        public string? username { get; set; }
-        public string? credential { get; set; }
+        public string urls { get; init; } = string.Empty;
+        public string? username { get; init; }
+        public string? credential { get; init; }
     }
 }
 
 [RegisterInIl2Cpp]
 public sealed class PeerAudioFilter : MonoBehaviour
 {
-    public ConcurrentQueue<float>? SampleQueue;
+    [HideFromIl2Cpp]
+    public ConcurrentQueue<float>? SampleQueue { get; set; }
     public PeerAudioFilter(IntPtr ptr) : base(ptr) { }
 
     private void OnAudioFilterRead(float[] data, int channels)
